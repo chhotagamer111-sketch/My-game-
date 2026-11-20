@@ -1,0 +1,2526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Zenox Snake Pro</title>
+  <style>
+    /* Global reset and mobile touch optimization */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #070b14;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    /* Mobile opening animations: always settle cleanly at opacity: 1 and transform: none */
+    .app {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      animation: zenoxAppEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes zenoxAppEnter {
+      0% {
+        opacity: 0.08;
+        transform: translate3d(0, 18px, 0) scale(0.975);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 10px 12px;
+      animation: zenoxCardRise 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .app > :nth-child(1) { animation-delay: 0.04s; }
+    .app > :nth-child(2) { animation-delay: 0.08s; }
+    .app > :nth-child(3) { animation-delay: 0.12s; }
+    .app > :nth-child(4) { animation-delay: 0.16s; }
+    .app > :nth-child(5) { animation-delay: 0.2s; }
+    .app > :nth-child(6) { animation-delay: 0.24s; }
+    .app > :nth-child(7) { animation-delay: 0.28s; }
+
+    @keyframes zenoxCardRise {
+      0% {
+        opacity: 0.15;
+        transform: translate3d(0, 12px, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #34d399;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .snake-emblem {
+      display: inline-block;
+      animation: emblemBounce 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    }
+
+    @keyframes emblemBounce {
+      0% {
+        transform: scale(0.35) rotate(-25deg);
+      }
+      100% {
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .badge-pro {
+      font-size: 10px;
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-weight: 800;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: #1f2937;
+      touch-action: manipulation;
+      transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-green {
+      background: #10b981;
+      color: #04130d;
+    }
+
+    .btn-cyan {
+      background: #06b6d4;
+      color: #041318;
+    }
+
+    .btn-amber {
+      background: #f59e0b;
+      color: #1c1002;
+    }
+
+    .btn-red {
+      background: #f43f5e;
+      color: #fff;
+    }
+
+    /* 3-Column Mode Selector: 1 PLAYER, VS BOT, ROOM */
+    .modes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .mode-btn.active {
+      background: #10b981;
+      color: #04130d;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+    }
+
+    /* Customization Bar: Map Style & Snake Skins */
+    .custom-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .custom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      border: 1px solid #334155;
+      background: #090e1a;
+      color: #cbd5e1;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+    }
+
+    .pill-btn.active {
+      border-color: #34d399;
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+    }
+
+    .skin-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Custom Room Panel */
+    .room-box {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      border-color: rgba(34, 211, 238, 0.45);
+    }
+
+    .room-box.show {
+      display: flex;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .input {
+      width: 100%;
+      background: #090e1a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      touch-action: manipulation;
+    }
+
+    .input:focus {
+      border-color: #34d399;
+    }
+
+    .code-badge {
+      font-family: monospace;
+      font-size: 17px;
+      font-weight: 800;
+      color: #22d3ee;
+      letter-spacing: 2px;
+    }
+
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+
+    .status-pill.online {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+    }
+
+    .status-pill.waiting {
+      background: rgba(34, 211, 238, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.4);
+    }
+
+    .status-pill.error {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+
+    /* Stats Telemetry */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+
+    .stat-box {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 7px 6px;
+      position: relative;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stat-val {
+      font-size: 17px;
+      font-weight: 800;
+      color: #34d399;
+      margin-top: 2px;
+    }
+
+    /* Active Buffs HUD Strip */
+    .buffs-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      min-height: 22px;
+      flex-wrap: wrap;
+    }
+
+    .buff-tag {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 9px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      animation: pulseTag 1.1s infinite alternate;
+    }
+
+    .buff-shield {
+      background: rgba(34, 211, 238, 0.18);
+      border: 1px solid #22d3ee;
+      color: #22d3ee;
+    }
+
+    .buff-double {
+      background: rgba(251, 191, 36, 0.18);
+      border: 1px solid #fbbf24;
+      color: #fbbf24;
+    }
+
+    .buff-boost {
+      background: rgba(244, 63, 94, 0.2);
+      border: 1px solid #fb7185;
+      color: #fb7185;
+    }
+
+    @keyframes pulseTag {
+      from { opacity: 0.85; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+
+    /* Game Board */
+    .board-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      min-height: 260px;
+      background: #070b14;
+      border: 2px solid #1e293b;
+      border-radius: 16px;
+      overflow: hidden;
+      touch-action: none;
+      transform: translateZ(0);
+      will-change: transform;
+      animation: zenoxBoardReveal 0.56s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    @keyframes zenoxBoardReveal {
+      0% {
+        opacity: 0.12;
+        transform: scale(0.94) translate3d(0, 12px, 0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translate3d(0, 0, 0);
+      }
+    }
+
+    .board-wrap.portal-mode {
+      border-color: rgba(168, 85, 247, 0.65);
+      box-shadow: inset 0 0 18px rgba(168, 85, 247, 0.22);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      transform: translateZ(0);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 11, 20, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 11px;
+      padding: 18px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: auto;
+      animation: overlayFade 0.28s ease-out both;
+    }
+
+    @keyframes overlayFade {
+      0% { opacity: 0.1; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .overlay.hidden {
+      display: none !important;
+      pointer-events: none;
+    }
+
+    .overlay-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #34d399;
+    }
+
+    .overlay-sub {
+      font-size: 13px;
+      color: #cbd5e1;
+      max-width: 300px;
+      line-height: 1.45;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #cbd5e1;
+      text-align: left;
+      width: 100%;
+      max-width: 290px;
+    }
+
+    .controls-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* D-Pad + Boost Layout */
+    .pad-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 4px 6px;
+      animation: zenoxCardRise 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+    }
+
+    .pad-area.swapped {
+      flex-direction: row-reverse;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      grid-template-rows: repeat(2, 62px);
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .dpad-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      color: #34d399;
+      font-size: 23px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .dpad-btn:active {
+      background: #10b981;
+      color: #04130d;
+      transform: scale(0.94);
+    }
+
+    .boost-btn {
+      flex: 1;
+      height: 92px;
+      max-width: 92px;
+      border-radius: 14px;
+      border: 2px solid rgba(251, 191, 36, 0.5);
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      color: #fbbf24;
+      font-size: 12px;
+      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      touch-action: none;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      transition: transform 0.08s ease, background 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .boost-btn.boosting,
+    .boost-btn:active {
+      background: linear-gradient(145deg, #f59e0b, #d97706);
+      color: #090d16;
+      border-color: #fde68a;
+      box-shadow: 0 0 18px rgba(245, 158, 11, 0.65);
+      transform: scale(0.96);
+    }
+
+    .empty {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .chat-log {
+      max-height: 88px;
+      overflow-y: auto;
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .status-text {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div id="appRoot" class="app">
+    <!-- Top Bar -->
+    <div class="card top-bar">
+      <div class="title"><span class="snake-emblem">🐍</span> ZENOX SNAKE <span class="badge-pro">PRO</span></div>
+      <div class="row">
+        <button id="soundBtn" class="btn" type="button">🔊 Sound</button>
+        <button id="fullscreenBtn" class="btn" type="button">⛶ Full</button>
+      </div>
+    </div>
+
+    <!-- 3-Mode Switcher: 1 PLAYER, VS BOT, ROOM -->
+    <div class="card modes">
+      <button id="mode1P" class="btn mode-btn active" type="button">1 PLAYER</button>
+      <button id="modeBot" class="btn mode-btn" type="button">🤖 VS BOT</button>
+      <button id="modeRoom" class="btn mode-btn" type="button">🌐 ROOM</button>
+    </div>
+
+    <!-- Map Style & Snake Skins Bar -->
+    <div id="customPanel" class="card custom-bar">
+      <div id="mapRow" class="custom-row">
+        <span class="status-text" style="font-weight:700;">ARENA:</span>
+        <div class="pill-group">
+          <button id="mapWallsBtn" class="pill-btn active" type="button">🧱 WALLS</button>
+          <button id="mapPortalBtn" class="pill-btn" type="button">🌀 PORTAL</button>
+        </div>
+      </div>
+
+      <div class="custom-row">
+        <span class="status-text" style="font-weight:700;">SKIN:</span>
+        <div class="pill-group" id="skinGroup">
+          <button class="pill-btn active" data-skin="emerald" type="button">
+            <span class="skin-dot" style="background:#34d399;"></span>Emerald
+          </button>
+          <button class="pill-btn" data-skin="cyber" type="button">
+            <span class="skin-dot" style="background:#f472b6;"></span>Cyber
+          </button>
+          <button class="pill-btn" data-skin="gold" type="button">
+            <span class="skin-dot" style="background:#fbbf24;"></span>Gold
+          </button>
+          <button class="pill-btn" data-skin="rainbow" type="button">
+            <span class="skin-dot" style="background:linear-gradient(90deg,#f43f5e,#fbbf24,#34d399,#38bdf8);"></span>Rainbow
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Online Custom Room Panel -->
+    <div id="roomPanel" class="card room-box">
+      <div class="row">
+        <strong style="font-size:12px;color:#22d3ee;">ONLINE CUSTOM ROOM</strong>
+        <span id="roomStatus" class="status-pill">Ready</span>
+      </div>
+
+      <input id="nameInput" class="input" type="text" maxlength="14" placeholder="Apna naam likhein..." />
+
+      <div class="row">
+        <button id="createRoomBtn" class="btn btn-cyan" type="button" style="flex:1;">+ CREATE ROOM</button>
+        <input id="joinCodeInput" class="input" type="text" maxlength="5" placeholder="CODE" style="width:92px;text-align:center;text-transform:uppercase;font-weight:800;letter-spacing:1px;" />
+        <button id="joinRoomBtn" class="btn btn-green" type="button">JOIN</button>
+      </div>
+
+      <div id="createdCodeBox" class="row" style="display:none;background:#090e1a;padding:8px 10px;border-radius:10px;border:1px solid #1e293b;">
+        <div>
+          <div class="status-text">Share Room Code</div>
+          <div id="roomCodeText" class="code-badge">-----</div>
+        </div>
+        <button id="copyCodeBtn" class="btn" type="button">Copy</button>
+      </div>
+
+      <div class="row" style="background:#090e1a;padding:8px 10px;border-radius:10px;border:1px solid #1e293b;">
+        <span id="micStatus" class="status-text">🎙️ Voice Chat OFF</span>
+        <button id="micBtn" class="btn btn-green" type="button">🎤 Start Mic</button>
+      </div>
+
+      <div id="chatLog" class="chat-log">
+        <div class="status-text">Room create karein ya friend ka 5-letter code daal kar JOIN dabayein.</div>
+      </div>
+
+      <form id="chatForm" class="row">
+        <input id="chatInput" class="input" type="text" maxlength="80" placeholder="Friend ko message bhejein..." />
+        <button class="btn btn-green" type="submit">Send</button>
+      </form>
+
+      <audio id="remoteAudio" autoplay playsinline></audio>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="card stats">
+      <div class="stat-box">
+        <div id="p1Label" class="stat-label">Score</div>
+        <div id="scoreVal" class="stat-val">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Speed</div>
+        <div id="speedVal" class="stat-val" style="color:#fbbf24;">1.0x</div>
+      </div>
+      <div class="stat-box">
+        <div id="p2Label" class="stat-label">Best</div>
+        <div id="bestVal" class="stat-val" style="color:#22d3ee;">0</div>
+      </div>
+    </div>
+
+    <!-- Active Buffs Strip -->
+    <div id="buffsBar" class="buffs-bar"></div>
+
+    <!-- Game Board -->
+    <div id="boardWrap" class="board-wrap">
+      <canvas id="gameCanvas"></canvas>
+
+      <div id="overlay" class="overlay">
+        <div id="overlayTitle" class="overlay-title">ZENOX SNAKE PRO</div>
+        <div id="overlaySub" class="overlay-sub">Swipe karein, D-Pad dabayein, ya WASD/Arrows use karein. Hold BOOST for 2x speed!</div>
+
+        <div class="legend-grid">
+          <div>🍎 Apple: <b>+10 pts</b></div>
+          <div>🌟 Golden: <b>+30 pts</b></div>
+          <div>🛡️ Shield: <b>1-Hit Save</b></div>
+          <div>⚡ 2x Orb: <b>Double Pts</b></div>
+        </div>
+
+        <div class="row" style="justify-content:center;flex-wrap:wrap;">
+          <button id="playBtn" class="btn btn-green" type="button" style="padding:12px 26px;font-size:15px;">▶ PLAY GAME</button>
+          <button id="rematchBtn" class="btn btn-amber" type="button" style="padding:12px 18px;font-size:14px;display:none;">🔄 REMATCH</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match Controls -->
+    <div class="controls-row" style="grid-template-columns: 1fr 1fr 1fr;">
+      <button id="pauseBtn" class="btn" type="button">⏸ Pause</button>
+      <button id="swapPadBtn" class="btn" type="button">⇄ Left/Right</button>
+      <button id="restartBtn" class="btn" type="button">↻ Restart</button>
+    </div>
+
+    <!-- Touch D-Pad & Speed Boost -->
+    <div id="padArea" class="pad-area">
+      <div class="dpad">
+        <div class="empty"></div>
+        <button id="upBtn" class="dpad-btn" type="button" aria-label="Up">▲</button>
+        <div class="empty"></div>
+        <button id="leftBtn" class="dpad-btn" type="button" aria-label="Left">◀</button>
+        <button id="downBtn" class="dpad-btn" type="button" aria-label="Down">▼</button>
+        <button id="rightBtn" class="dpad-btn" type="button" aria-label="Right">▶</button>
+      </div>
+
+      <button id="boostBtn" class="boost-btn" type="button" aria-label="Speed Boost">
+        <span style="font-size:20px;">⚡</span>
+        <span>BOOST</span>
+        <span style="font-size:9px;opacity:0.75;">HOLD</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const GRID = 20;
+      const ROOM_PREFIX = "zenox-snake-room-";
+
+      // DOM References
+      const boardWrap = document.getElementById("boardWrap");
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas ? canvas.getContext("2d") : null;
+
+      const overlay = document.getElementById("overlay");
+      const overlayTitle = document.getElementById("overlayTitle");
+      const overlaySub = document.getElementById("overlaySub");
+      const playBtn = document.getElementById("playBtn");
+      const rematchBtn = document.getElementById("rematchBtn");
+      const pauseBtn = document.getElementById("pauseBtn");
+      const swapPadBtn = document.getElementById("swapPadBtn");
+      const restartBtn = document.getElementById("restartBtn");
+      const padArea = document.getElementById("padArea");
+
+      const scoreVal = document.getElementById("scoreVal");
+      const bestVal = document.getElementById("bestVal");
+      const speedVal = document.getElementById("speedVal");
+      const p1Label = document.getElementById("p1Label");
+      const p2Label = document.getElementById("p2Label");
+      const buffsBar = document.getElementById("buffsBar");
+
+      const mode1P = document.getElementById("mode1P");
+      const modeBot = document.getElementById("modeBot");
+      const modeRoom = document.getElementById("modeRoom");
+
+      const mapRow = document.getElementById("mapRow");
+      const mapWallsBtn = document.getElementById("mapWallsBtn");
+      const mapPortalBtn = document.getElementById("mapPortalBtn");
+      const skinGroup = document.getElementById("skinGroup");
+
+      const roomPanel = document.getElementById("roomPanel");
+      const roomStatus = document.getElementById("roomStatus");
+      const nameInput = document.getElementById("nameInput");
+      const createRoomBtn = document.getElementById("createRoomBtn");
+      const joinCodeInput = document.getElementById("joinCodeInput");
+      const joinRoomBtn = document.getElementById("joinRoomBtn");
+      const createdCodeBox = document.getElementById("createdCodeBox");
+      const roomCodeText = document.getElementById("roomCodeText");
+      const copyCodeBtn = document.getElementById("copyCodeBtn");
+
+      const micBtn = document.getElementById("micBtn");
+      const micStatus = document.getElementById("micStatus");
+      const remoteAudio = document.getElementById("remoteAudio");
+      const chatLog = document.getElementById("chatLog");
+      const chatForm = document.getElementById("chatForm");
+      const chatInput = document.getElementById("chatInput");
+
+      const soundBtn = document.getElementById("soundBtn");
+      const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+      const upBtn = document.getElementById("upBtn");
+      const downBtn = document.getElementById("downBtn");
+      const leftBtn = document.getElementById("leftBtn");
+      const rightBtn = document.getElementById("rightBtn");
+      const boostBtn = document.getElementById("boostBtn");
+
+      // Snake Skins
+      const SKINS = {
+        emerald: {
+          head: "#34d399",
+          bodyRgb: "16, 185, 129",
+          glow: "rgba(52, 211, 153, 0.78)",
+          eye: "#04130d"
+        },
+        cyber: {
+          head: "#f472b6",
+          bodyRgb: "236, 72, 153",
+          glow: "rgba(244, 114, 182, 0.78)",
+          eye: "#1f0714"
+        },
+        gold: {
+          head: "#fbbf24",
+          bodyRgb: "245, 158, 11",
+          glow: "rgba(251, 191, 36, 0.78)",
+          eye: "#1c1002"
+        },
+        rainbow: {
+          head: "#38bdf8",
+          bodyRgb: "56, 189, 248",
+          glow: "rgba(56, 189, 248, 0.8)",
+          eye: "#081421",
+          rainbow: true
+        }
+      };
+
+      const THEME_BOT_P2 = {
+        head: "#f472b6",
+        bodyRgb: "236, 72, 153",
+        glow: "rgba(244, 114, 182, 0.75)",
+        eye: "#1f0714"
+      };
+
+      // Game State
+      let mode = "1P"; // "1P" | "BOT" | "ROOM"
+      let mapType = "WALLS"; // "WALLS" | "PORTAL"
+      let activeSkinKey = "emerald";
+
+      let snake1 = [];
+      let dir1 = { x: 1, y: 0 };
+      let dirQueue1 = [];
+      let prevSnake1 = [];
+      let score1 = 0;
+      let shield1 = false;
+      let doubleScoreUntil1 = 0;
+
+      let snake2 = [];
+      let dir2 = { x: -1, y: 0 };
+      let dirQueue2 = [];
+      let prevSnake2 = [];
+      let score2 = 0;
+      let shield2 = false;
+
+      let food = { x: 14, y: 10 };
+      let bonusItem = null; // { x, y, type: "GOLD" | "SHIELD" | "DOUBLE", expiresAt, duration }
+      let nextBonusSpawnAt = 0;
+
+      let particles = [];
+      let floatingTexts = [];
+      let shakeTime = 0;
+      let shakeIntensity = 0;
+      let lastBuffHtml = "";
+      let lastSpeedText = "";
+
+      // Offscreen cached grid canvas to eliminate per-frame grid line draw calls on mobile
+      const gridCacheCanvas = document.createElement("canvas");
+      const gridCacheCtx = gridCacheCanvas.getContext("2d");
+      let cachedGridSize = 0;
+      let cachedGridPortal = false;
+
+      let bestScore = 0;
+      let baseStepMs = 145;
+      let boosting = false;
+      let lastStep = 0;
+      let moveProgress = 1;
+      let pulsePhase = 0;
+      let running = false;
+      let paused = false;
+      let soundOn = true;
+      let audioCtx = null;
+
+      // PeerJS Dynamic Loader & Multiplayer State
+      let peerLibLoading = false;
+      let peer = null;
+      let dataConn = null;
+      let mediaCall = null;
+      let micStream = null;
+      let micActive = false;
+      let roomRole = "HOST"; // "HOST" | "GUEST"
+      let roomCode = "";
+      let hostName = "Player 1";
+      let friendName = "Friend";
+
+      // Safe localStorage wrappers
+      function readStorage(key) {
+        try {
+          return window.localStorage ? window.localStorage.getItem(key) : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function writeStorage(key, val) {
+        try {
+          if (window.localStorage) window.localStorage.setItem(key, val);
+        } catch (_) {}
+      }
+
+      bestScore = parseInt(readStorage("zenox_snake_best") || "0", 10) || 0;
+      const savedName = readStorage("zenox_snake_name") || "";
+      const savedSkin = readStorage("zenox_snake_skin") || "emerald";
+      let padSwapped = readStorage("zenox_pad_swapped") === "1";
+      if (padSwapped && padArea) padArea.classList.add("swapped");
+      if (SKINS[savedSkin]) activeSkinKey = savedSkin;
+      if (savedName && nameInput) nameInput.value = savedName;
+      if (bestVal) bestVal.textContent = String(bestScore);
+
+      // Sync skin pills UI on load
+      if (skinGroup) {
+        skinGroup.querySelectorAll(".pill-btn").forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-skin") === activeSkinKey);
+        });
+      }
+
+      function getPlayerName() {
+        const clean = ((nameInput && nameInput.value) || "Player").trim().slice(0, 14) || "Player";
+        writeStorage("zenox_snake_name", clean);
+        return clean;
+      }
+
+      function setRoomStatus(text, type) {
+        if (!roomStatus) return;
+        roomStatus.textContent = text;
+        roomStatus.className = "status-pill" + (type ? " " + type : "");
+      }
+
+      function appendChat(sender, text, isSystem) {
+        if (!chatLog) return;
+        const line = document.createElement("div");
+        if (isSystem) {
+          line.className = "status-text";
+          line.textContent = text;
+        } else {
+          const strong = document.createElement("strong");
+          strong.style.color = "#22d3ee";
+          strong.textContent = sender + ": ";
+          line.appendChild(strong);
+          line.appendChild(document.createTextNode(text));
+        }
+        chatLog.appendChild(line);
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      // Reliable click + touch tap helper without blocking subsequent clicks
+      function onTap(el, handler) {
+        if (!el) return;
+        let lastTouchTime = 0;
+
+        el.addEventListener("touchend", function (e) {
+          if (el.disabled) return;
+          lastTouchTime = performance.now();
+          handler(e);
+        }, { passive: true });
+
+        el.addEventListener("click", function (e) {
+          if (el.disabled) return;
+          if (performance.now() - lastTouchTime < 450) {
+            return;
+          }
+          handler(e);
+        });
+      }
+
+      // Synthesized Web Audio
+      function unlockAudio() {
+        try {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return;
+          if (!audioCtx) audioCtx = new AC();
+          if (audioCtx.state === "suspended") {
+            audioCtx.resume().catch(function () {});
+          }
+        } catch (_) {}
+      }
+
+      function beep(freq, duration, type) {
+        if (!soundOn) return;
+        try {
+          unlockAudio();
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type || "sine";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (_) {}
+      }
+
+      function copyText(text) {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+            return;
+          }
+        } catch (_) {}
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (_) {}
+      }
+
+      // Juicy Visual Effects Helpers
+      function spawnParticles(gridX, gridY, color, count) {
+        if (!canvas) return;
+        const tile = canvas.width / GRID;
+        const cx = (gridX + 0.5) * tile;
+        const cy = (gridY + 0.5) * tile;
+        const maxCount = Math.min(count || 10, 14);
+        for (let i = 0; i < maxCount; i++) {
+          if (particles.length >= 42) particles.shift();
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1.2 + Math.random() * 3.4;
+          particles.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            decay: 0.04 + Math.random() * 0.03,
+            radius: 2 + Math.random() * 2.5,
+            color: color
+          });
+        }
+      }
+
+      function spawnFloatingText(gridX, gridY, text, color) {
+        if (!canvas) return;
+        if (floatingTexts.length >= 15) floatingTexts.shift();
+        const tile = canvas.width / GRID;
+        floatingTexts.push({
+          x: (gridX + 0.5) * tile,
+          y: (gridY + 0.2) * tile,
+          text: text,
+          color: color || "#34d399",
+          life: 1
+        });
+      }
+
+      function triggerShake(intensity, durationMs) {
+        shakeIntensity = intensity || 6;
+        shakeTime = performance.now() + (durationMs || 220);
+      }
+
+      // Responsive Canvas Resize
+      function resizeCanvas() {
+        if (!canvas || !ctx) return;
+        try {
+          const rect = boardWrap ? boardWrap.getBoundingClientRect() : null;
+          const measured = rect && rect.width > 0 ? rect.width : (canvas.clientWidth || 340);
+          const size = Math.max(240, Math.min(480, Math.floor(measured)));
+          if (canvas.width !== size || canvas.height !== size) {
+            canvas.width = size;
+            canvas.height = size;
+            cachedGridSize = 0;
+          }
+          draw();
+        } catch (_) {}
+      }
+
+      if (typeof ResizeObserver !== "undefined" && boardWrap) {
+        try {
+          const ro = new ResizeObserver(function () {
+            resizeCanvas();
+          });
+          ro.observe(boardWrap);
+        } catch (_) {}
+      }
+
+      // Dynamically load PeerJS only when needed
+      function ensurePeerLibrary(callback) {
+        if (typeof window.Peer !== "undefined") {
+          callback(true);
+          return;
+        }
+        if (peerLibLoading) return;
+        peerLibLoading = true;
+
+        let settled = false;
+        const finish = function (ok) {
+          if (settled) return;
+          settled = true;
+          peerLibLoading = false;
+          callback(ok);
+        };
+
+        const timer = setTimeout(function () {
+          finish(typeof window.Peer !== "undefined");
+        }, 6500);
+
+        try {
+          const script = document.createElement("script");
+          script.src = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+          script.async = true;
+          script.onload = function () {
+            clearTimeout(timer);
+            finish(typeof window.Peer !== "undefined");
+          };
+          script.onerror = function () {
+            clearTimeout(timer);
+            finish(false);
+          };
+          document.head.appendChild(script);
+        } catch (_) {
+          clearTimeout(timer);
+          finish(false);
+        }
+      }
+
+      function cleanupPeer() {
+        try {
+          if (mediaCall) {
+            mediaCall.close();
+            mediaCall = null;
+          }
+          if (dataConn) {
+            dataConn.close();
+            dataConn = null;
+          }
+          if (peer) {
+            peer.destroy();
+            peer = null;
+          }
+        } catch (_) {}
+      }
+
+      function sendPeerData(payload) {
+        if (dataConn && dataConn.open) {
+          try {
+            dataConn.send(payload);
+          } catch (_) {}
+        }
+      }
+
+      function broadcastState(eventStatus, message) {
+        if (mode !== "ROOM" || roomRole !== "HOST") return;
+        sendPeerData({
+          type: "STATE",
+          snake1: snake1,
+          snake2: snake2,
+          dir1: dir1,
+          dir2: dir2,
+          food: food,
+          bonusItem: bonusItem,
+          score1: score1,
+          score2: score2,
+          shield1: shield1,
+          shield2: shield2,
+          baseStepMs: baseStepMs,
+          running: running,
+          paused: paused,
+          hostName: hostName,
+          friendName: friendName,
+          status: eventStatus || "",
+          winner: message || ""
+        });
+      }
+
+      function setupMediaCall(call) {
+        if (!call) return;
+        mediaCall = call;
+        call.on("stream", function (remoteStream) {
+          if (remoteAudio) {
+            remoteAudio.srcObject = remoteStream;
+            remoteAudio.play().catch(function () {});
+          }
+          if (micStatus) {
+            micStatus.textContent = micActive ? "🎙️ Mic ON • Friend Live" : "🔊 Friend Speaking";
+          }
+        });
+        call.on("close", function () {
+          mediaCall = null;
+          if (micStatus) {
+            micStatus.textContent = micActive ? "🎙️ Mic ON" : "🎙️ Voice Chat OFF";
+          }
+        });
+      }
+
+      function updateRoomScoreLabels() {
+        if (mode !== "ROOM") return;
+        if (roomRole === "HOST") {
+          hostName = getPlayerName();
+        } else {
+          friendName = getPlayerName();
+        }
+        if (p1Label) p1Label.textContent = "🟢 " + hostName;
+        if (p2Label) p2Label.textContent = "🩷 " + friendName;
+      }
+
+      function bindDataConnection(conn) {
+        dataConn = conn;
+
+        conn.on("open", function () {
+          setRoomStatus("Connected", "online");
+          if (roomRole === "GUEST") {
+            const myName = getPlayerName();
+            sendPeerData({ type: "HELLO", name: myName });
+            appendChat("", "Room " + roomCode + " se connect ho gaye! Host ke start karne ka intezaar...", true);
+            if (overlayTitle) overlayTitle.textContent = "CONNECTED!";
+            if (overlaySub) overlaySub.textContent = "Host ke 'START MATCH' dabane ka intezaar karein...";
+            if (playBtn) playBtn.style.display = "none";
+            if (rematchBtn) rematchBtn.style.display = "none";
+          } else {
+            hostName = getPlayerName();
+            sendPeerData({ type: "WELCOME", name: hostName });
+            updateRoomScoreLabels();
+            if (overlayTitle) overlayTitle.textContent = "FRIEND JOINED!";
+            if (overlaySub) overlaySub.textContent = friendName + " aa gaya hai! Ab START MATCH dabayein.";
+            if (playBtn) {
+              playBtn.style.display = "inline-block";
+              playBtn.textContent = "▶ START MATCH";
+            }
+          }
+
+          if (micActive && micStream && peer && conn.peer) {
+            try {
+              const call = peer.call(conn.peer, micStream);
+              setupMediaCall(call);
+            } catch (_) {}
+          }
+        });
+
+        conn.on("data", function (msg) {
+          if (!msg || typeof msg !== "object") return;
+
+          if (msg.type === "HELLO" && roomRole === "HOST") {
+            friendName = (msg.name || "Friend").slice(0, 14);
+            updateRoomScoreLabels();
+            appendChat("", friendName + " room mein join ho gaya!", true);
+            sendPeerData({ type: "WELCOME", name: getPlayerName() });
+            if (overlayTitle) overlayTitle.textContent = "FRIEND JOINED!";
+            if (overlaySub) overlaySub.textContent = friendName + " ready hai! Match start karein.";
+          } else if (msg.type === "WELCOME" && roomRole === "GUEST") {
+            hostName = (msg.name || "Host").slice(0, 14);
+            friendName = getPlayerName();
+            updateRoomScoreLabels();
+            appendChat("", "Host (" + hostName + ") se jud gaye!", true);
+          } else if (msg.type === "CHAT") {
+            appendChat(msg.sender || "Friend", msg.text || "", false);
+          } else if (msg.type === "REMATCH_REQ" && roomRole === "HOST") {
+            appendChat("", "🔄 " + (msg.sender || friendName) + " ne REMATCH maanga hai!", true);
+            if (overlaySub) overlaySub.textContent = (msg.sender || friendName) + " rematch khelna chahta hai! PLAY AGAIN dabayein.";
+          } else if (msg.type === "DIR" && roomRole === "HOST") {
+            queueDirection(2, msg.dir);
+          } else if (msg.type === "STATE" && roomRole === "GUEST") {
+            prevSnake1 = snake1.length ? snake1.map(function (s) { return { x: s.x, y: s.y }; }) : (msg.snake1 || []);
+            prevSnake2 = snake2.length ? snake2.map(function (s) { return { x: s.x, y: s.y }; }) : (msg.snake2 || []);
+            snake1 = msg.snake1 || [];
+            snake2 = msg.snake2 || [];
+            dir1 = msg.dir1 || dir1;
+            dir2 = msg.dir2 || dir2;
+            food = msg.food || food;
+            bonusItem = msg.bonusItem || null;
+            score1 = msg.score1 || 0;
+            score2 = msg.score2 || 0;
+            shield1 = !!msg.shield1;
+            shield2 = !!msg.shield2;
+            baseStepMs = msg.baseStepMs || 145;
+            running = !!msg.running;
+            paused = !!msg.paused;
+            lastStep = performance.now();
+            moveProgress = 0;
+
+            if (msg.hostName) hostName = msg.hostName;
+            if (msg.friendName) friendName = msg.friendName;
+            updateRoomScoreLabels();
+
+            if (scoreVal) scoreVal.textContent = String(score1);
+            if (bestVal) bestVal.textContent = String(score2);
+            const mult = Math.max(1, Number((145 / baseStepMs).toFixed(1)));
+            if (speedVal) speedVal.textContent = mult.toFixed(1) + "x";
+
+            if (msg.status === "START") {
+              beep(520, 0.08);
+              if (rematchBtn) rematchBtn.style.display = "none";
+              if (overlay) overlay.classList.add("hidden");
+            } else if (msg.status === "EAT") {
+              beep(660, 0.09);
+            } else if (msg.status === "GAMEOVER") {
+              beep(180, 0.25, "sawtooth");
+              triggerShake(7, 250);
+              if (overlayTitle) overlayTitle.textContent = "GAME OVER";
+              if (overlaySub) overlaySub.textContent = msg.winner || "Match khatam! Host ke restart ka intezaar karein.";
+              if (playBtn) playBtn.style.display = "none";
+              if (rematchBtn) {
+                rematchBtn.style.display = "inline-block";
+                rematchBtn.disabled = false;
+                rematchBtn.textContent = "🔄 REMATCH";
+              }
+              if (overlay) overlay.classList.remove("hidden");
+            }
+          }
+        });
+
+        conn.on("close", function () {
+          setRoomStatus("Disconnected", "error");
+          appendChat("", "Player disconnect ho gaya.", true);
+          running = false;
+          if (overlayTitle) overlayTitle.textContent = "DISCONNECTED";
+          if (overlaySub) overlaySub.textContent = "Friend ka connection toot gaya. Naya room banayein ya join karein.";
+          if (rematchBtn) rematchBtn.style.display = "none";
+          if (playBtn) {
+            playBtn.style.display = "inline-block";
+            playBtn.textContent = "▶ PLAY SOLO";
+          }
+          if (overlay) overlay.classList.remove("hidden");
+        });
+
+        conn.on("error", function () {
+          setRoomStatus("Disconnected / Error", "error");
+        });
+      }
+
+      function generateRoomCode() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let out = "";
+        for (let i = 0; i < 5; i++) {
+          out += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return out;
+      }
+
+      function createOnlineRoom() {
+        setRoomStatus("Creating...", "waiting");
+        if (createRoomBtn) createRoomBtn.disabled = true;
+
+        ensurePeerLibrary(function (loaded) {
+          if (!loaded || typeof window.Peer === "undefined") {
+            if (createRoomBtn) createRoomBtn.disabled = false;
+            setRoomStatus("Disconnected / Error", "error");
+            appendChat("", "Internet check karein: Multiplayer server load nahi hua.", true);
+            return;
+          }
+
+          cleanupPeer();
+          roomRole = "HOST";
+          roomCode = generateRoomCode();
+          hostName = getPlayerName();
+          friendName = "Waiting...";
+
+          if (createdCodeBox) createdCodeBox.style.display = "flex";
+          if (roomCodeText) roomCodeText.textContent = roomCode;
+
+          try {
+            peer = new window.Peer(ROOM_PREFIX + roomCode, { debug: 0 });
+
+            peer.on("open", function () {
+              setRoomStatus("Waiting for friend...", "waiting");
+              appendChat("", "Room " + roomCode + " taiyaar hai! Code friend ko bhejein.", true);
+              if (createRoomBtn) createRoomBtn.disabled = false;
+              updateRoomScoreLabels();
+            });
+
+            peer.on("connection", function (conn) {
+              if (dataConn && dataConn.open) {
+                conn.close();
+                return;
+              }
+              bindDataConnection(conn);
+            });
+
+            peer.on("call", function (call) {
+              setupMediaCall(call);
+              if (micActive && micStream) {
+                call.answer(micStream);
+              } else {
+                call.answer();
+              }
+            });
+
+            peer.on("error", function (err) {
+              if (createRoomBtn) createRoomBtn.disabled = false;
+              if (err && err.type === "unavailable-id") {
+                createOnlineRoom();
+                return;
+              }
+              setRoomStatus("Disconnected / Error", "error");
+              appendChat("", "Room error: " + ((err && err.type) || "Network issue"), true);
+            });
+          } catch (_) {
+            if (createRoomBtn) createRoomBtn.disabled = false;
+            setRoomStatus("Disconnected / Error", "error");
+          }
+        });
+      }
+
+      function joinOnlineRoom() {
+        const code = ((joinCodeInput && joinCodeInput.value) || "").trim().toUpperCase();
+        if (code.length < 4) {
+          appendChat("", "Sahi 5-letter room code daalein.", true);
+          return;
+        }
+
+        setRoomStatus("Connecting...", "waiting");
+        if (joinRoomBtn) joinRoomBtn.disabled = true;
+
+        ensurePeerLibrary(function (loaded) {
+          if (!loaded || typeof window.Peer === "undefined") {
+            if (joinRoomBtn) joinRoomBtn.disabled = false;
+            setRoomStatus("Disconnected / Error", "error");
+            appendChat("", "Internet check karein: Multiplayer server load nahi hua.", true);
+            return;
+          }
+
+          cleanupPeer();
+          roomRole = "GUEST";
+          roomCode = code;
+          friendName = getPlayerName();
+
+          if (createdCodeBox) createdCodeBox.style.display = "flex";
+          if (roomCodeText) roomCodeText.textContent = roomCode;
+
+          try {
+            peer = new window.Peer({ debug: 0 });
+
+            peer.on("open", function () {
+              const conn = peer.connect(ROOM_PREFIX + roomCode, { reliable: true });
+              bindDataConnection(conn);
+              if (joinRoomBtn) joinRoomBtn.disabled = false;
+            });
+
+            peer.on("call", function (call) {
+              setupMediaCall(call);
+              if (micActive && micStream) {
+                call.answer(micStream);
+              } else {
+                call.answer();
+              }
+            });
+
+            peer.on("error", function () {
+              if (joinRoomBtn) joinRoomBtn.disabled = false;
+              setRoomStatus("Disconnected / Error", "error");
+              appendChat("", "Room '" + roomCode + "' nahi mila ya offline hai.", true);
+            });
+          } catch (_) {
+            if (joinRoomBtn) joinRoomBtn.disabled = false;
+            setRoomStatus("Disconnected / Error", "error");
+          }
+        });
+      }
+
+      // Switch between 1P, VS BOT, and ROOM
+      function setMode(newMode) {
+        mode = newMode;
+        running = false;
+        paused = false;
+        boosting = false;
+        if (pauseBtn) pauseBtn.textContent = "⏸ Pause";
+        if (rematchBtn) rematchBtn.style.display = "none";
+
+        if (mode1P) mode1P.classList.toggle("active", mode === "1P");
+        if (modeBot) modeBot.classList.toggle("active", mode === "BOT");
+        if (modeRoom) modeRoom.classList.toggle("active", mode === "ROOM");
+
+        if (roomPanel) roomPanel.classList.toggle("show", mode === "ROOM");
+        if (mapRow) mapRow.style.display = mode === "ROOM" ? "none" : "flex";
+
+        if (mode !== "ROOM") {
+          cleanupPeer();
+          setRoomStatus("Ready", "");
+        } else {
+          setMapType("WALLS");
+        }
+
+        resetState();
+        if (overlayTitle) overlayTitle.textContent = "ZENOX SNAKE PRO";
+        if (playBtn) {
+          playBtn.style.display = "inline-block";
+          playBtn.textContent = "▶ PLAY GAME";
+        }
+        if (overlaySub) {
+          if (mode === "1P") {
+            overlaySub.textContent = "Solo mode: Power-ups collect karein aur high score banayein!";
+          } else if (mode === "BOT") {
+            overlaySub.textContent = "VS Bot AI: Smart Robo-Snake se pehle food khayein aur use out karein!";
+          } else {
+            overlaySub.textContent = "Create Room dabayein ya friend ka code daal kar Join karein.";
+          }
+        }
+        if (overlay) overlay.classList.remove("hidden");
+        resizeCanvas();
+      }
+
+      function setMapType(newMap) {
+        mapType = newMap === "PORTAL" ? "PORTAL" : "WALLS";
+        if (mapWallsBtn) mapWallsBtn.classList.toggle("active", mapType === "WALLS");
+        if (mapPortalBtn) mapPortalBtn.classList.toggle("active", mapType === "PORTAL");
+        if (boardWrap) boardWrap.classList.toggle("portal-mode", mapType === "PORTAL");
+        draw();
+      }
+
+      // Buffered Direction Queue
+      function queueDirection(playerNum, newDir) {
+        if (!newDir || typeof newDir.x !== "number" || typeof newDir.y !== "number") return;
+        const queue = playerNum === 1 ? dirQueue1 : dirQueue2;
+        const baseDir = queue.length > 0 ? queue[queue.length - 1] : (playerNum === 1 ? dir1 : dir2);
+
+        if (baseDir.x === newDir.x && baseDir.y === newDir.y) return;
+        if (baseDir.x + newDir.x === 0 && baseDir.y + newDir.y === 0) return;
+        if (queue.length < 2) {
+          queue.push({ x: newDir.x, y: newDir.y });
+        }
+      }
+
+      function isCellOccupied(x, y) {
+        if (food && food.x === x && food.y === y) return true;
+        if (bonusItem && bonusItem.x === x && bonusItem.y === y) return true;
+        if (snake1.some(function (s) { return s.x === x && s.y === y; })) return true;
+        if (snake2.some(function (s) { return s.x === x && s.y === y; })) return true;
+        return false;
+      }
+
+      function randomFreeCell() {
+        for (let tries = 0; tries < 300; tries++) {
+          const cx = Math.floor(Math.random() * GRID);
+          const cy = Math.floor(Math.random() * GRID);
+          if (!isCellOccupied(cx, cy)) return { x: cx, y: cy };
+        }
+        return { x: 10, y: 10 };
+      }
+
+      function maybeSpawnBonus(now) {
+        if (bonusItem) {
+          if (now >= bonusItem.expiresAt) {
+            bonusItem = null;
+            nextBonusSpawnAt = now + 5000 + Math.random() * 4000;
+          }
+          return;
+        }
+        if (now >= nextBonusSpawnAt) {
+          const cell = randomFreeCell();
+          const types = ["GOLD", "SHIELD", "DOUBLE"];
+          const chosen = types[Math.floor(Math.random() * types.length)];
+          const duration = 9000;
+          bonusItem = {
+            x: cell.x,
+            y: cell.y,
+            type: chosen,
+            duration: duration,
+            expiresAt: now + duration
+          };
+        }
+      }
+
+      // Smart AI Pathfinding for VS BOT Mode
+      function computeBotDirection() {
+        if (!snake2.length) return dir2;
+        const head = snake2[0];
+        const candidates = [
+          { x: 0, y: -1 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 },
+          { x: 1, y: 0 }
+        ].filter(function (d) {
+          return !(d.x + dir2.x === 0 && d.y + dir2.y === 0);
+        });
+
+        const target = bonusItem && (bonusItem.type === "GOLD" || bonusItem.type === "SHIELD") ? bonusItem : food;
+        let bestDir = candidates[0] || dir2;
+        let bestScoreVal = -Infinity;
+
+        candidates.forEach(function (d) {
+          let nx = head.x + d.x;
+          let ny = head.y + d.y;
+
+          if (mapType === "PORTAL") {
+            nx = (nx + GRID) % GRID;
+            ny = (ny + GRID) % GRID;
+          } else if (nx < 0 || nx >= GRID || ny < 0 || ny >= GRID) {
+            return;
+          }
+
+          // Only avoid own body; snakes safely pass through each other
+          const hit2 = snake2.slice(0, -1).some(function (s) { return s.x === nx && s.y === ny; });
+          if (hit2) return;
+
+          let openNeighbors = 0;
+          const neighbors = [
+            { x: nx + 1, y: ny },
+            { x: nx - 1, y: ny },
+            { x: nx, y: ny + 1 },
+            { x: nx, y: ny - 1 }
+          ];
+          neighbors.forEach(function (nb) {
+            let bx = nb.x;
+            let by = nb.y;
+            if (mapType === "PORTAL") {
+              bx = (bx + GRID) % GRID;
+              by = (by + GRID) % GRID;
+            } else if (bx < 0 || bx >= GRID || by < 0 || by >= GRID) {
+              return;
+            }
+            const occ2 = snake2.some(function (s) { return s.x === bx && s.y === by; });
+            if (!occ2) openNeighbors++;
+          });
+
+          let dist = Math.abs(nx - target.x) + Math.abs(ny - target.y);
+          if (mapType === "PORTAL") {
+            const dx = Math.min(Math.abs(nx - target.x), GRID - Math.abs(nx - target.x));
+            const dy = Math.min(Math.abs(ny - target.y), GRID - Math.abs(ny - target.y));
+            dist = dx + dy;
+          }
+
+          const evalScore = -dist * 10 + openNeighbors * 6 + (Math.random() * 1.5);
+          if (evalScore > bestScoreVal) {
+            bestScoreVal = evalScore;
+            bestDir = d;
+          }
+        });
+
+        return bestDir;
+      }
+
+      function updateBuffsHUD(now) {
+        if (!buffsBar) return;
+        let html = "";
+        if (shield1) {
+          html += '<span class="buff-tag buff-shield">🛡️ SHIELD READY</span>';
+        }
+        if (doubleScoreUntil1 > now) {
+          const secs = Math.ceil((doubleScoreUntil1 - now) / 1000);
+          html += '<span class="buff-tag buff-double">⚡ 2X SCORE (' + secs + 's)</span>';
+        }
+        if (boosting && running && !paused) {
+          html += '<span class="buff-tag buff-boost">🔥 TURBO BOOST</span>';
+        }
+        if (html !== lastBuffHtml) {
+          lastBuffHtml = html;
+          buffsBar.innerHTML = html;
+        }
+      }
+
+      function resetState() {
+        score1 = 0;
+        score2 = 0;
+        shield1 = false;
+        shield2 = false;
+        doubleScoreUntil1 = 0;
+        baseStepMs = 145;
+        moveProgress = 1;
+        dirQueue1 = [];
+        dirQueue2 = [];
+        particles = [];
+        floatingTexts = [];
+        bonusItem = null;
+        nextBonusSpawnAt = performance.now() + 4500;
+
+        if (speedVal) {
+          lastSpeedText = "1.0x";
+          speedVal.textContent = "1.0x";
+        }
+
+        if (mode === "1P") {
+          snake1 = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
+          dir1 = { x: 1, y: 0 };
+          snake2 = [];
+          prevSnake2 = [];
+          if (p1Label) p1Label.textContent = "Score";
+          if (p2Label) p2Label.textContent = "Best";
+          if (scoreVal) scoreVal.textContent = "0";
+          if (bestVal) bestVal.textContent = String(bestScore);
+        } else if (mode === "BOT") {
+          snake1 = [{ x: 5, y: 7 }, { x: 4, y: 7 }, { x: 3, y: 7 }];
+          dir1 = { x: 1, y: 0 };
+          snake2 = [{ x: 14, y: 12 }, { x: 15, y: 12 }, { x: 16, y: 12 }];
+          dir2 = { x: -1, y: 0 };
+          if (p1Label) p1Label.textContent = "🟢 YOU";
+          if (p2Label) p2Label.textContent = "🤖 BOT AI";
+          if (scoreVal) scoreVal.textContent = "0";
+          if (bestVal) bestVal.textContent = "0";
+        } else {
+          snake1 = [{ x: 5, y: 7 }, { x: 4, y: 7 }, { x: 3, y: 7 }];
+          dir1 = { x: 1, y: 0 };
+          snake2 = [{ x: 14, y: 12 }, { x: 15, y: 12 }, { x: 16, y: 12 }];
+          dir2 = { x: -1, y: 0 };
+          updateRoomScoreLabels();
+          if (scoreVal) scoreVal.textContent = "0";
+          if (bestVal) bestVal.textContent = "0";
+        }
+
+        prevSnake1 = snake1.map(function (s) { return { x: s.x, y: s.y }; });
+        prevSnake2 = snake2.map(function (s) { return { x: s.x, y: s.y }; });
+        food = randomFreeCell();
+        updateBuffsHUD(performance.now());
+        draw();
+      }
+
+      function startGame() {
+        try {
+          unlockAudio();
+          if (mode === "ROOM" && roomRole === "GUEST" && dataConn && dataConn.open) {
+            return;
+          }
+          resetState();
+          running = true;
+          paused = false;
+          moveProgress = 0;
+          if (pauseBtn) pauseBtn.textContent = "⏸ Pause";
+          if (rematchBtn) rematchBtn.style.display = "none";
+          if (overlay) {
+            overlay.classList.add("hidden");
+            overlay.style.display = "none";
+          }
+          lastStep = performance.now();
+          beep(520, 0.08);
+          broadcastState("START", "");
+        } catch (_) {
+          running = true;
+          if (overlay) {
+            overlay.classList.add("hidden");
+            overlay.style.display = "none";
+          }
+        }
+      }
+
+      function showOverlayPanel() {
+        if (!overlay) return;
+        overlay.classList.remove("hidden");
+        overlay.style.display = "flex";
+      }
+
+      function finishGame(msg) {
+        running = false;
+        paused = false;
+        boosting = false;
+        if (boostBtn) boostBtn.classList.remove("boosting");
+        moveProgress = 1;
+        beep(180, 0.28, "sawtooth");
+        triggerShake(8, 280);
+
+        if (snake1.length) {
+          spawnParticles(snake1[0].x, snake1[0].y, SKINS[activeSkinKey].head, 24);
+        }
+
+        if (mode === "1P" && score1 > bestScore) {
+          bestScore = score1;
+          if (bestVal) bestVal.textContent = String(bestScore);
+          writeStorage("zenox_snake_best", String(bestScore));
+        }
+
+        if (overlayTitle) overlayTitle.textContent = "GAME OVER";
+        if (overlaySub) overlaySub.textContent = msg || ("Final Score: " + score1);
+        if (playBtn) {
+          playBtn.style.display = "inline-block";
+          playBtn.textContent = "↻ PLAY AGAIN";
+        }
+        showOverlayPanel();
+        updateBuffsHUD(performance.now());
+        draw();
+        broadcastState("GAMEOVER", msg || "");
+      }
+
+      function resolveNextHead(head, dir) {
+        let nx = head.x + dir.x;
+        let ny = head.y + dir.y;
+        let hitWall = false;
+
+        if (mapType === "PORTAL" && mode !== "ROOM") {
+          nx = (nx + GRID) % GRID;
+          ny = (ny + GRID) % GRID;
+        } else if (nx < 0 || nx >= GRID || ny < 0 || ny >= GRID) {
+          hitWall = true;
+        }
+        return { x: nx, y: ny, hitWall: hitWall };
+      }
+
+      function handleBonusPickup(playerNum, now) {
+        if (!bonusItem) return;
+        const bx = bonusItem.x;
+        const by = bonusItem.y;
+        const bType = bonusItem.type;
+        bonusItem = null;
+        nextBonusSpawnAt = now + 5500 + Math.random() * 4000;
+
+        if (bType === "GOLD") {
+          const pts = playerNum === 1 && doubleScoreUntil1 > now ? 60 : 30;
+          if (playerNum === 1) score1 += pts;
+          else score2 += pts;
+          spawnParticles(bx, by, "#fbbf24", 18);
+          spawnFloatingText(bx, by, "+" + pts, "#fbbf24");
+          beep(820, 0.12, "triangle");
+        } else if (bType === "SHIELD") {
+          if (playerNum === 1) shield1 = true;
+          else shield2 = true;
+          spawnParticles(bx, by, "#22d3ee", 18);
+          spawnFloatingText(bx, by, "SHIELD!", "#22d3ee");
+          beep(740, 0.14, "sine");
+        } else if (bType === "DOUBLE") {
+          if (playerNum === 1) {
+            doubleScoreUntil1 = now + 8000;
+            spawnFloatingText(bx, by, "2X PTS!", "#f59e0b");
+          } else {
+            score2 += 20;
+            spawnFloatingText(bx, by, "+20", "#f59e0b");
+          }
+          spawnParticles(bx, by, "#f59e0b", 18);
+          beep(900, 0.14, "triangle");
+        }
+      }
+
+      function step() {
+        const now = performance.now();
+        maybeSpawnBonus(now);
+
+        prevSnake1 = snake1.map(function (s) { return { x: s.x, y: s.y }; });
+        if (snake2.length > 0) {
+          prevSnake2 = snake2.map(function (s) { return { x: s.x, y: s.y }; });
+        }
+
+        if (dirQueue1.length > 0) {
+          dir1 = dirQueue1.shift();
+        }
+        const next1 = resolveNextHead(snake1[0], dir1);
+
+        // SINGLE PLAYER STEP
+        if (mode === "1P") {
+          const willEat = !next1.hitWall && next1.x === food.x && next1.y === food.y;
+          const bodyToCheck = willEat ? snake1 : snake1.slice(0, -1);
+          const selfCrash = !next1.hitWall && bodyToCheck.some(function (seg) {
+            return seg.x === next1.x && seg.y === next1.y;
+          });
+
+          if (next1.hitWall || selfCrash) {
+            if (shield1 && !next1.hitWall) {
+              shield1 = false;
+              spawnParticles(next1.x, next1.y, "#22d3ee", 16);
+              spawnFloatingText(next1.x, next1.y, "SHIELD SAVED!", "#22d3ee");
+              triggerShake(5, 160);
+              beep(320, 0.15);
+            } else if (shield1 && next1.hitWall) {
+              shield1 = false;
+              next1.x = (next1.x + GRID) % GRID;
+              next1.y = (next1.y + GRID) % GRID;
+              spawnParticles(next1.x, next1.y, "#22d3ee", 16);
+              spawnFloatingText(next1.x, next1.y, "SHIELD WRAP!", "#22d3ee");
+              triggerShake(5, 160);
+              beep(320, 0.15);
+            } else {
+              finishGame((next1.hitWall ? "Wall se takra gaye!" : "Apni body se takra gaye!") + " Score: " + score1);
+              return;
+            }
+          }
+
+          const h1 = { x: next1.x, y: next1.y };
+          snake1.unshift(h1);
+
+          if (bonusItem && h1.x === bonusItem.x && h1.y === bonusItem.y) {
+            handleBonusPickup(1, now);
+          }
+
+          if (h1.x === food.x && h1.y === food.y) {
+            const pts = doubleScoreUntil1 > now ? 20 : 10;
+            score1 += pts;
+            spawnParticles(food.x, food.y, "#fb7185", 14);
+            spawnFloatingText(food.x, food.y, "+" + pts, doubleScoreUntil1 > now ? "#fbbf24" : "#34d399");
+            food = randomFreeCell();
+            beep(660, 0.09);
+          } else {
+            snake1.pop();
+          }
+
+          if (scoreVal) scoreVal.textContent = String(score1);
+          if (score1 > bestScore) {
+            bestScore = score1;
+            if (bestVal) bestVal.textContent = String(bestScore);
+            writeStorage("zenox_snake_best", String(bestScore));
+          }
+          baseStepMs = Math.max(68, 145 - Math.floor(score1 / 30) * 7);
+          return;
+        }
+
+        // VS BOT or ONLINE ROOM STEP
+        if (mode === "BOT") {
+          dir2 = computeBotDirection();
+        } else if (dirQueue2.length > 0) {
+          dir2 = dirQueue2.shift();
+        }
+
+        const next2 = resolveNextHead(snake2[0], dir2);
+
+        const eat1 = !next1.hitWall && next1.x === food.x && next1.y === food.y;
+        const eat2 = !next2.hitWall && next2.x === food.x && next2.y === food.y;
+
+        const body1Check = eat1 ? snake1 : snake1.slice(0, -1);
+        const body2Check = eat2 ? snake2 : snake2.slice(0, -1);
+
+        const p1Self = !next1.hitWall && body1Check.some(function (seg) { return seg.x === next1.x && seg.y === next1.y; });
+        const p2Self = !next2.hitWall && body2Check.some(function (seg) { return seg.x === next2.x && seg.y === next2.y; });
+
+        // Snakes do NOT get out when colliding with each other; only wall or self-collision counts
+        let p1Dead = next1.hitWall || p1Self;
+        let p2Dead = next2.hitWall || p2Self;
+
+        if (p1Dead && shield1) {
+          shield1 = false;
+          p1Dead = false;
+          if (next1.hitWall) {
+            next1.x = (next1.x + GRID) % GRID;
+            next1.y = (next1.y + GRID) % GRID;
+          }
+          spawnParticles(next1.x, next1.y, "#22d3ee", 15);
+          spawnFloatingText(next1.x, next1.y, "SHIELD SAVED!", "#22d3ee");
+          beep(320, 0.14);
+        }
+
+        if (p2Dead && shield2) {
+          shield2 = false;
+          p2Dead = false;
+          if (next2.hitWall) {
+            next2.x = (next2.x + GRID) % GRID;
+            next2.y = (next2.y + GRID) % GRID;
+          }
+          spawnParticles(next2.x, next2.y, "#22d3ee", 15);
+          beep(320, 0.14);
+        }
+
+        const p2DisplayName = mode === "BOT" ? "🤖 Bot AI" : friendName;
+        const p1DisplayName = mode === "BOT" ? "Aap" : hostName;
+
+        if (p1Dead && p2Dead) {
+          finishGame("Match Draw! (" + score1 + " - " + score2 + ")");
+          return;
+        }
+        if (p1Dead) {
+          finishGame(p2DisplayName + " Jeet Gaya! (" + score1 + " - " + score2 + ")");
+          return;
+        }
+        if (p2Dead) {
+          finishGame(p1DisplayName + " Jeet Gaye! (" + score1 + " - " + score2 + ")");
+          return;
+        }
+
+        const h1 = { x: next1.x, y: next1.y };
+        const h2 = { x: next2.x, y: next2.y };
+
+        snake1.unshift(h1);
+        snake2.unshift(h2);
+
+        if (bonusItem && h1.x === bonusItem.x && h1.y === bonusItem.y) {
+          handleBonusPickup(1, now);
+        } else if (bonusItem && h2.x === bonusItem.x && h2.y === bonusItem.y) {
+          handleBonusPickup(2, now);
+        }
+
+        let ate = false;
+        if (eat1) {
+          const pts1 = doubleScoreUntil1 > now ? 20 : 10;
+          score1 += pts1;
+          spawnParticles(food.x, food.y, "#fb7185", 12);
+          spawnFloatingText(food.x, food.y, "+" + pts1, "#34d399");
+          ate = true;
+        } else {
+          snake1.pop();
+        }
+
+        if (eat2) {
+          score2 += 10;
+          spawnParticles(food.x, food.y, "#f472b6", 12);
+          spawnFloatingText(food.x, food.y, "+10", "#f472b6");
+          ate = true;
+        } else {
+          snake2.pop();
+        }
+
+        if (scoreVal) scoreVal.textContent = String(score1);
+        if (bestVal) bestVal.textContent = String(score2);
+
+        if (ate) {
+          const totalScore = score1 + score2;
+          baseStepMs = Math.max(75, 145 - Math.floor(totalScore / 40) * 6);
+          food = randomFreeCell();
+          beep(660, 0.09);
+        }
+
+        broadcastState(ate ? "EAT" : "TICK", "");
+      }
+
+      // Canvas Rendering (Cached Grid + Zero-Blur Mobile Fast Path)
+      function rebuildGridCache(size, isPortal) {
+        if (!gridCacheCtx) return;
+        gridCacheCanvas.width = size;
+        gridCacheCanvas.height = size;
+        const tile = size / GRID;
+
+        gridCacheCtx.fillStyle = "#070b14";
+        gridCacheCtx.fillRect(0, 0, size, size);
+
+        gridCacheCtx.strokeStyle = isPortal
+          ? "rgba(88, 28, 135, 0.35)"
+          : "rgba(30, 41, 59, 0.45)";
+        gridCacheCtx.lineWidth = 1;
+        gridCacheCtx.beginPath();
+        for (let i = 1; i < GRID; i++) {
+          const pos = Math.round(i * tile) + 0.5;
+          gridCacheCtx.moveTo(pos, 0);
+          gridCacheCtx.lineTo(pos, size);
+          gridCacheCtx.moveTo(0, pos);
+          gridCacheCtx.lineTo(size, pos);
+        }
+        gridCacheCtx.stroke();
+
+        cachedGridSize = size;
+        cachedGridPortal = isPortal;
+      }
+
+      function drawGrid() {
+        if (!canvas || !ctx) return;
+        const isPortal = mapType === "PORTAL" && mode !== "ROOM";
+        if (cachedGridSize !== canvas.width || cachedGridPortal !== isPortal) {
+          rebuildGridCache(canvas.width, isPortal);
+        }
+        ctx.drawImage(gridCacheCanvas, 0, 0);
+      }
+
+      function drawFood() {
+        if (!canvas || !ctx) return;
+        const tile = canvas.width / GRID;
+        const cx = (food.x + 0.5) * tile;
+        const cy = (food.y + 0.5) * tile;
+        const pulse = 1 + Math.sin(pulsePhase) * 0.13;
+        const r = tile * 0.34 * pulse;
+
+        ctx.fillStyle = "rgba(244, 63, 94, 0.22)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.45, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#fb7185";
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#34d399";
+        ctx.beginPath();
+        ctx.ellipse(cx + r * 0.25, cy - r * 0.85, r * 0.35, r * 0.18, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawBonusItem(now) {
+        if (!bonusItem || !canvas || !ctx) return;
+        const tile = canvas.width / GRID;
+        const cx = (bonusItem.x + 0.5) * tile;
+        const cy = (bonusItem.y + 0.5) * tile;
+        const remainingRatio = Math.max(0, Math.min(1, (bonusItem.expiresAt - now) / bonusItem.duration));
+        const pulse = 1 + Math.sin(pulsePhase * 1.4) * 0.1;
+
+        let color = "#fbbf24";
+        let haloColor = "rgba(251, 191, 36, 0.22)";
+        let icon = "★";
+        if (bonusItem.type === "SHIELD") {
+          color = "#22d3ee";
+          haloColor = "rgba(34, 211, 238, 0.22)";
+          icon = "🛡️";
+        } else if (bonusItem.type === "DOUBLE") {
+          color = "#f59e0b";
+          haloColor = "rgba(245, 158, 11, 0.22)";
+          icon = "2X";
+        }
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, tile * 0.44, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * remainingRatio);
+        ctx.stroke();
+
+        ctx.fillStyle = haloColor;
+        ctx.beginPath();
+        ctx.arc(cx, cy, tile * 0.4 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(cx, cy, tile * 0.3 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#070b14";
+        ctx.font = "900 " + Math.max(9, Math.floor(tile * 0.34)) + "px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(icon, cx, cy + 0.5);
+      }
+
+      function drawRoundedRect(x, y, w, h, r) {
+        if (typeof ctx.roundRect === "function") {
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, r);
+          return;
+        }
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
+      }
+
+      function drawSnake(list, prevList, vel, theme, hasShield) {
+        if (!canvas || !ctx || !list.length) return;
+        const tile = canvas.width / GRID;
+        const t = running && !paused ? Math.min(1, Math.max(0, moveProgress)) : 1;
+        const pad = Math.max(1.5, tile * 0.07);
+        const size = Math.max(4, tile - pad * 2);
+        const radius = size * 0.36;
+
+        for (let idx = list.length - 1; idx >= 0; idx--) {
+          const seg = list[idx];
+          const prev = prevList[idx] || seg;
+
+          const jumpX = Math.abs(seg.x - prev.x) > 1;
+          const jumpY = Math.abs(seg.y - prev.y) > 1;
+          const gx = jumpX ? seg.x : prev.x + (seg.x - prev.x) * t;
+          const gy = jumpY ? seg.y : prev.y + (seg.y - prev.y) * t;
+
+          const px = gx * tile + pad;
+          const py = gy * tile + pad;
+
+          if (idx === 0) {
+            ctx.fillStyle = theme.glow.replace(/0\.\d+\)/, "0.22)");
+            ctx.beginPath();
+            ctx.arc(gx * tile + tile / 2, gy * tile + tile / 2, tile * 0.65, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = theme.rainbow
+              ? "hsl(" + ((pulsePhase * 45) % 360) + ", 90%, 62%)"
+              : theme.head;
+          } else if (theme.rainbow) {
+            const hue = ((pulsePhase * 45) - idx * 18 + 360) % 360;
+            ctx.fillStyle = "hsl(" + hue + ", 85%, 55%)";
+          } else {
+            const alpha = Math.max(0.4, 1 - idx / (list.length + 5));
+            ctx.fillStyle = "rgba(" + theme.bodyRgb + ", " + alpha + ")";
+          }
+
+          drawRoundedRect(px, py, size, size, radius);
+          ctx.fill();
+
+          if (idx === 0) {
+            if (hasShield) {
+              ctx.strokeStyle = "#22d3ee";
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              ctx.arc(gx * tile + tile / 2, gy * tile + tile / 2, tile * 0.56, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+
+            ctx.fillStyle = theme.eye;
+            const eyeR = Math.max(2, tile * 0.09);
+            const cx = gx * tile + tile / 2;
+            const cy = gy * tile + tile / 2;
+            const offset = tile * 0.2;
+
+            let e1 = { x: cx + offset, y: cy - offset };
+            let e2 = { x: cx + offset, y: cy + offset };
+
+            if (vel.x === -1) {
+              e1 = { x: cx - offset, y: cy - offset };
+              e2 = { x: cx - offset, y: cy + offset };
+            } else if (vel.y === -1) {
+              e1 = { x: cx - offset, y: cy - offset };
+              e2 = { x: cx + offset, y: cy - offset };
+            } else if (vel.y === 1) {
+              e1 = { x: cx - offset, y: cy + offset };
+              e2 = { x: cx + offset, y: cy + offset };
+            }
+
+            ctx.beginPath();
+            ctx.arc(e1.x, e1.y, eyeR, 0, Math.PI * 2);
+            ctx.arc(e2.x, e2.y, eyeR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      function updateAndDrawEffects() {
+        if (!ctx) return;
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (floatingTexts.length > 0) {
+          ctx.font = "900 13px sans-serif";
+          ctx.textAlign = "center";
+          for (let j = floatingTexts.length - 1; j >= 0; j--) {
+            const ft = floatingTexts[j];
+            ft.y -= 0.7;
+            ft.life -= 0.028;
+            if (ft.life <= 0) {
+              floatingTexts.splice(j, 1);
+              continue;
+            }
+            ctx.globalAlpha = ft.life;
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, ft.x, ft.y);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function draw() {
+        if (!canvas || !ctx) return;
+        const now = performance.now();
+        const isShaking = now < shakeTime;
+        if (isShaking) {
+          ctx.save();
+          const dx = (Math.random() - 0.5) * shakeIntensity * 2;
+          const dy = (Math.random() - 0.5) * shakeIntensity * 2;
+          ctx.translate(dx, dy);
+        }
+
+        drawGrid();
+        drawFood();
+        drawBonusItem(now);
+        drawSnake(snake1, prevSnake1, dir1, SKINS[activeSkinKey] || SKINS.emerald, shield1);
+        if (snake2.length > 0) {
+          drawSnake(snake2, prevSnake2, dir2, THEME_BOT_P2, shield2);
+        }
+        updateAndDrawEffects();
+
+        if (isShaking) {
+          ctx.restore();
+        }
+      }
+
+      // Main 60fps Loop
+      function loop(now) {
+        pulsePhase = now * 0.007;
+        const effectiveStepMs = boosting ? Math.max(48, baseStepMs * 0.55) : baseStepMs;
+
+        if (running && !paused) {
+          const isGuestOnline = mode === "ROOM" && roomRole === "GUEST" && dataConn && dataConn.open;
+          // Clamp elapsed delta to prevent freezing/stuttering after mobile lag spikes or tab switches
+          let elapsed = now - lastStep;
+          if (elapsed > effectiveStepMs * 1.5) {
+            elapsed = effectiveStepMs;
+            lastStep = now - elapsed;
+          }
+
+          if (!isGuestOnline) {
+            if (elapsed >= effectiveStepMs) {
+              lastStep = now;
+              step();
+              moveProgress = 0;
+            } else {
+              moveProgress = Math.max(0, elapsed / effectiveStepMs);
+            }
+          } else {
+            moveProgress = Math.min(1, Math.max(0, elapsed / effectiveStepMs));
+          }
+
+          const mult = Math.max(1, Number((145 / effectiveStepMs).toFixed(1)));
+          const speedStr = mult.toFixed(1) + "x";
+          if (speedVal && speedStr !== lastSpeedText) {
+            lastSpeedText = speedStr;
+            speedVal.textContent = speedStr;
+          }
+        }
+
+        updateBuffsHUD(now);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // Unified Direction Dispatch
+      function sendMove(dir) {
+        if (mode === "ROOM" && roomRole === "GUEST") {
+          sendPeerData({ type: "DIR", dir: dir });
+        } else {
+          queueDirection(1, dir);
+        }
+      }
+
+      // Wire UI Buttons
+      onTap(playBtn, startGame);
+
+      onTap(rematchBtn, function () {
+        if (mode === "ROOM" && roomRole === "GUEST") {
+          const sender = getPlayerName();
+          sendPeerData({ type: "REMATCH_REQ", sender: sender });
+          appendChat(sender, "🔄 Rematch request bhej di!", false);
+          rematchBtn.disabled = true;
+          rematchBtn.textContent = "✓ Sent!";
+        }
+      });
+
+      onTap(pauseBtn, function () {
+        if (!running) return;
+        if (mode === "ROOM" && roomRole === "GUEST" && dataConn && dataConn.open) return;
+        paused = !paused;
+        pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
+        if (!paused) lastStep = performance.now();
+        broadcastState("PAUSE", "");
+      });
+
+      onTap(restartBtn, function () {
+        if (mode === "ROOM" && roomRole === "GUEST" && dataConn && dataConn.open) return;
+        startGame();
+      });
+
+      onTap(swapPadBtn, function () {
+        padSwapped = !padSwapped;
+        if (padArea) padArea.classList.toggle("swapped", padSwapped);
+        writeStorage("zenox_pad_swapped", padSwapped ? "1" : "0");
+        beep(600, 0.05);
+      });
+
+      onTap(mode1P, function () { setMode("1P"); });
+      onTap(modeBot, function () { setMode("BOT"); });
+      onTap(modeRoom, function () { setMode("ROOM"); });
+
+      onTap(mapWallsBtn, function () { setMapType("WALLS"); });
+      onTap(mapPortalBtn, function () { setMapType("PORTAL"); });
+
+      if (skinGroup) {
+        skinGroup.querySelectorAll(".pill-btn").forEach(function (btn) {
+          onTap(btn, function () {
+            const key = btn.getAttribute("data-skin");
+            if (!SKINS[key]) return;
+            activeSkinKey = key;
+            writeStorage("zenox_snake_skin", key);
+            skinGroup.querySelectorAll(".pill-btn").forEach(function (b) {
+              b.classList.toggle("active", b === btn);
+            });
+            draw();
+          });
+        });
+      }
+
+      // Boost Hold Controls (Touch + Mouse)
+      function setBoosting(state) {
+        if (mode === "ROOM" && roomRole === "GUEST") return;
+        boosting = !!state;
+        if (boostBtn) boostBtn.classList.toggle("boosting", boosting);
+      }
+
+      if (boostBtn) {
+        boostBtn.addEventListener("touchstart", function () {
+          setBoosting(true);
+        }, { passive: true });
+        boostBtn.addEventListener("touchend", function () {
+          setBoosting(false);
+        }, { passive: true });
+        boostBtn.addEventListener("touchcancel", function () { setBoosting(false); });
+        boostBtn.addEventListener("mousedown", function () { setBoosting(true); });
+        window.addEventListener("mouseup", function () { if (boosting) setBoosting(false); });
+        window.addEventListener("blur", function () { if (boosting) setBoosting(false); });
+      }
+
+      onTap(createRoomBtn, createOnlineRoom);
+      onTap(joinRoomBtn, joinOnlineRoom);
+
+      onTap(copyCodeBtn, function () {
+        const code = (roomCodeText && roomCodeText.textContent) || "";
+        if (!code || code === "-----") return;
+        copyText(code);
+        copyCodeBtn.textContent = "Copied!";
+        setTimeout(function () {
+          copyCodeBtn.textContent = "Copy";
+        }, 1200);
+      });
+
+      onTap(micBtn, async function () {
+        if (!micActive) {
+          try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+              if (micStatus) micStatus.textContent = "🎙️ Mic not supported";
+              return;
+            }
+            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micActive = true;
+            if (micStatus) micStatus.textContent = "🎙️ Mic ON";
+            micBtn.textContent = "⏹ Stop Mic";
+            micBtn.className = "btn btn-red";
+
+            if (peer && dataConn && dataConn.open && dataConn.peer) {
+              const call = peer.call(dataConn.peer, micStream);
+              setupMediaCall(call);
+            }
+          } catch (_) {
+            if (micStatus) micStatus.textContent = "🎙️ Mic permission denied (HTTPS required)";
+          }
+        } else {
+          try {
+            if (micStream) {
+              micStream.getTracks().forEach(function (t) { t.stop(); });
+              micStream = null;
+            }
+            if (mediaCall) {
+              mediaCall.close();
+              mediaCall = null;
+            }
+          } catch (_) {}
+          micActive = false;
+          if (micStatus) micStatus.textContent = "🎙️ Voice Chat OFF";
+          micBtn.textContent = "🎤 Start Mic";
+          micBtn.className = "btn btn-green";
+        }
+      });
+
+      if (chatForm) {
+        chatForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const text = ((chatInput && chatInput.value) || "").trim();
+          if (!text) return;
+          const sender = getPlayerName();
+          appendChat(sender, text, false);
+          sendPeerData({ type: "CHAT", sender: sender, text: text });
+          if (chatInput) chatInput.value = "";
+        });
+      }
+
+      onTap(soundBtn, function () {
+        soundOn = !soundOn;
+        if (soundOn) unlockAudio();
+        soundBtn.textContent = soundOn ? "🔊 Sound" : "🔇 Muted";
+      });
+
+      onTap(fullscreenBtn, function () {
+        try {
+          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(function () {});
+          } else if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(function () {});
+          }
+        } catch (_) {}
+      });
+
+      // D-Pad Controls
+      onTap(upBtn, function () { sendMove({ x: 0, y: -1 }); });
+      onTap(downBtn, function () { sendMove({ x: 0, y: 1 }); });
+      onTap(leftBtn, function () { sendMove({ x: -1, y: 0 }); });
+      onTap(rightBtn, function () { sendMove({ x: 1, y: 0 }); });
+
+      // Keyboard Controls
+      window.addEventListener("keydown", function (e) {
+        const activeTag = document.activeElement ? document.activeElement.tagName : "";
+        if (activeTag === "INPUT" || activeTag === "TEXTAREA") return;
+
+        const key = (e.key || "").toLowerCase();
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
+          e.preventDefault();
+        }
+
+        if (key === "arrowup" || key === "w") {
+          sendMove({ x: 0, y: -1 });
+        } else if (key === "arrowdown" || key === "s") {
+          sendMove({ x: 0, y: 1 });
+        } else if (key === "arrowleft" || key === "a") {
+          sendMove({ x: -1, y: 0 });
+        } else if (key === "arrowright" || key === "d") {
+          sendMove({ x: 1, y: 0 });
+        } else if (key === " " || key === "shift") {
+          setBoosting(true);
+        } else if (key === "p" && running) {
+          if (mode === "ROOM" && roomRole === "GUEST" && dataConn && dataConn.open) return;
+          paused = !paused;
+          if (pauseBtn) pauseBtn.textContent = paused ? "▶ Resume" : "⏸ Pause";
+          if (!paused) lastStep = performance.now();
+          broadcastState("PAUSE", "");
+        }
+      });
+
+      window.addEventListener("keyup", function (e) {
+        const key = (e.key || "").toLowerCase();
+        if (key === " " || key === "shift") {
+          setBoosting(false);
+        }
+      });
+
+      // Touch Swipe Controls on Canvas
+      if (canvas) {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        canvas.addEventListener("touchstart", function (e) {
+          if (!e.touches || !e.touches.length) return;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        canvas.addEventListener("touchend", function (e) {
+          if (!e.changedTouches || !e.changedTouches.length) return;
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          const dy = e.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            sendMove(dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 });
+          } else {
+            sendMove(dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 });
+          }
+        }, { passive: true });
+      }
+
+      window.addEventListener("resize", resizeCanvas);
+      window.addEventListener("beforeunload", cleanupPeer);
+
+      // Boot sequence
+      resetState();
+      resizeCanvas();
+      setTimeout(resizeCanvas, 80);
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
